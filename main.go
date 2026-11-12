@@ -6,7 +6,45 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 )
+
+type Process struct {
+	PID  int
+	Name string
+}
+
+func parseProcesses(output string) ([]Process, error) {
+	var processes []Process
+
+	for _, line := range strings.Split(output, "\n") {
+		if line == "" {
+			continue
+		}
+
+		switch line[0] {
+		case 'p':
+			pid, err := strconv.Atoi(line[1:])
+			if err != nil || pid <= 0 {
+				return nil, fmt.Errorf("invalid process ID: %q", line[1:])
+			}
+
+			processes = append(processes, Process{
+				PID:  pid,
+				Name: "unknown",
+			})
+
+		case 'c':
+			if len(processes) == 0 {
+				return nil, fmt.Errorf("process name appeared before a process ID")
+			}
+
+			processes[len(processes)-1].Name = line[1:]
+		}
+	}
+
+	return processes, nil
+}
 
 func main() {
 	if len(os.Args) != 2 {
@@ -49,5 +87,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Print(string(output))
+	processes, err := parseProcesses(string(output))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Could not parse lsof output:", err)
+		os.Exit(1)
+	}
+
+	if len(processes) == 0 {
+		fmt.Printf("No TCP listener found on port %d.\n", port)
+		return
+	}
+
+	for _, process := range processes {
+		fmt.Printf(
+			"Port %d is used by %s (PID %d).\n",
+			port,
+			process.Name,
+			process.PID,
+		)
+	}
 }
