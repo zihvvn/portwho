@@ -25,6 +25,7 @@ func main() {
 		"-nP",
 		fmt.Sprintf("-iTCP:%d", port),
 		"-sTCP:LISTEN",
+		"-Fpc",
 	)
 
 	output, err := cmd.Output()
