@@ -47,9 +47,20 @@ func parseProcesses(output string) ([]Process, error) {
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Fprintln(os.Stderr, "Usage: portwho <port>")
+	if len(os.Args) < 2 || len(os.Args) > 3 {
+		fmt.Fprintln(os.Stderr, "Usage: portwho <port> [--kill]")
 		os.Exit(1)
+	}
+
+	killRequested := false
+
+	if len(os.Args) == 3 {
+		if os.Args[2] != "--kill" {
+			fmt.Fprintln(os.Stderr, "Unknown option:", os.Args[2])
+			os.Exit(1)
+		}
+
+		killRequested = true
 	}
 
 	port, err := strconv.Atoi(os.Args[1])
@@ -105,5 +116,9 @@ func main() {
 			process.Name,
 			process.PID,
 		)
+	}
+
+	if killRequested {
+		fmt.Println("Kill requested. Process termination is not implemented yet.")
 	}
 }
